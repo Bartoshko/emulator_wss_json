@@ -1,0 +1,29 @@
+{
+  "tag_short_id": 10999,
+  "path": {
+    "parameters": {
+      "loss": 5,
+      "closed": true,
+      "speed": 100,
+      "curved": true
+    },
+    "coordinates": [
+      {
+        "x": 200,
+        "y": 200
+      },
+      {
+        "x": 200,
+        "y": 500
+      },
+      {
+        "x": 500,
+        "y": 500
+      },
+      {
+        "x": 500,
+        "y": 200
+      }
+    ]
+  }
+}
