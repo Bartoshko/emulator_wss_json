@@ -16,56 +16,49 @@ points.
 class Path
 {
 public:
-	Path(vector<int> &CoordinatesX, vector<int> &CoordinatesY, bool isClosed, bool isCurved)
+	Path(vector<int> &CoordinatesX, vector<int> &CoordinatesY, bool isClosed, bool isCurved, int&anchors)
 	{
 		checkPointCoordinatesX = CoordinatesX;
 		checkPointCoordinatesY = CoordinatesY;
 		isClosed = isClosed;
 		isCurved = isCurved;
-		closingPathSetter(isClosed, checkPointCoordinatesX);
-		closingPathSetter(isClosed, checkPointCoordinatesY);
+		anchorsPtr = &anchors;
+		closingPathSetter(isClosed, checkPointCoordinatesX, checkPointCoordinatesY);
 		calculatePath(isCurved, pathAllCoords_X, pathAllCoords_Y);
 		printAllCrossingPoints(pathAllCoords_X, pathAllCoords_Y);
+		calculateDistancesForEachAnchor(pathAllCoords_X, pathAllCoords_Y, *anchorsPtr, distancesAnchor_Tag[10]);
 	}
 
-	vector<int>::iterator it = checkPointCoordinatesX.begin();
-
-	int getCheckPointCoordinatesX()
+	void calculateDistancesForEachAnchor(vector<int> &allCoords_X, vector<int> &allCoords_Y, int&anchorsPtr, vector<int> &distancesAnchor_Tag)
 	{
-		if(it-- != checkPointCoordinatesX.end())
-		{
-			it++;
-			return *it;
-		}
-	}
-
-	int getPathX(int index)
-	{
-		return checkPointCoordinatesX[index];
-	}
-
-	int getPathY(int index)
-	{
-		return checkPointCoordinatesY[index];
+		// todo: calculation of distances will happend here...
 	}
 
 private:
+	int *anchorsPtr;
 	vector<int> checkPointCoordinatesX, checkPointCoordinatesY, pathAllCoords_X, pathAllCoords_Y;
+	/*
+	distancesAnchor_Tag[10]
+	array of vectors to hold distances between maximum 10 anchors and given tag
+	*/
+	vector<int> distancesAnchor_Tag[10];
 	static bool isClosed, isCurved;
 
-	void closingPathSetter(bool closed, vector<int> &checkPoints)
+	void closingPathSetter(bool closed, vector<int> &checkPointsX, vector<int> &checkPointsY)
 	{
 		if(closed)
 		{
-			checkPoints.push_back(checkPoints[0]);
+			checkPointsX.push_back(checkPointsX[0]);
+			checkPointsY.push_back(checkPointsY[0]);
 		}
 		else
 		{
-			int index = checkPoints.size();
+			int index = checkPointsX.size();
 			while(index > 0)
 			{
 				index--;
-				checkPoints.push_back(checkPoints[index]);
+				checkPointsX.push_back(checkPointsX[index]);
+				checkPointsY.push_back(checkPointsY[index]);
 			}
 		}
 	}
