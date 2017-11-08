@@ -1,8 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
-
-using namespace std;
+#include <array>
 
 /*
 Path class constructs two arrays: pathAllCoords_X and pathAllCoords_Y
@@ -16,32 +15,40 @@ points.
 class Path
 {
 public:
-	Path(vector<int> &CoordinatesX, vector<int> &CoordinatesY, bool isClosed, bool isCurved, int&anchors)
+	Path(vector<int> &rCoordinatesX, vector<int> &rCoordinatesY, bool isClosed, bool isCurved, int &rAnchors)
 	{
-		checkPointCoordinatesX = CoordinatesX;
-		checkPointCoordinatesY = CoordinatesY;
+		checkPointCoordinatesX = rCoordinatesX;
+		checkPointCoordinatesY = rCoordinatesY;
 		isClosed = isClosed;
 		isCurved = isCurved;
-		anchorsPtr = &anchors;
+		pAnchors = &rAnchors;
 		closingPathSetter(isClosed, checkPointCoordinatesX, checkPointCoordinatesY);
 		calculatePath(isCurved, pathAllCoords_X, pathAllCoords_Y);
-		printAllCrossingPoints(pathAllCoords_X, pathAllCoords_Y);
-		calculateDistancesForEachAnchor(pathAllCoords_X, pathAllCoords_Y, *anchorsPtr, distancesAnchor_Tag[10]);
+		calculateDistancesForEachAnchor(pathAllCoords_X, pathAllCoords_Y, pAnchors, distancesAnchor_Tag);
 	}
-
-	void calculateDistancesForEachAnchor(vector<int> &allCoords_X, vector<int> &allCoords_Y, int&anchorsPtr, vector<int> &distancesAnchor_Tag)
+	array<int, 10> getConsecutiveDistance(void)
 	{
-		// todo: calculation of distances will happend here...
+		if (consecutiveDistanceCounter < distancesAnchor_Tag[0].size())
+		{
+			for (int c = 0; c < distancesAnchor_Tag.size(); c++)
+			{
+				consecutiveDistanceTable[c] = distancesAnchor_Tag[c][consecutiveDistanceCounter];
+			}
+			consecutiveDistanceCounter++;
+			return consecutiveDistanceTable;
+		}
+		else
+		{
+			consecutiveDistanceCounter = 0;
+		}
 	}
 
 private:
-	int *anchorsPtr;
+	int consecutiveDistanceCounter = 0;
+	int *pAnchors = 0;
 	vector<int> checkPointCoordinatesX, checkPointCoordinatesY, pathAllCoords_X, pathAllCoords_Y;
-	/*
-	distancesAnchor_Tag[10]
-	array of vectors to hold distances between maximum 10 anchors and given tag
-	*/
-	vector<int> distancesAnchor_Tag[10];
+	array<vector<int>, 10> distancesAnchor_Tag;
+	array<int, 10> consecutiveDistanceTable;
 	static bool isClosed, isCurved;
 
 	void closingPathSetter(bool closed, vector<int> &checkPointsX, vector<int> &checkPointsY)
@@ -63,7 +70,6 @@ private:
 		}
 	}
 
-	// this function callculates vector containing path coordinates
 	void calculatePath(bool curved, vector<int> &allCoords_X, vector<int> &allCoords_Y)
 	{
 		int vector_X, vector_Y, step;
@@ -108,16 +114,24 @@ private:
 		}
 	}
 
-	/*
-	todo: remove printAllCrossingPoints() after emulator will be fully finished
-	printAllCrossingPoints() is only to check coordinates values durring emitter construction
-	*/
-	void printAllCrossingPoints(vector<int> &x_es, vector<int> &y_es)
+	void calculateDistancesForEachAnchor(vector<int> &rAllCoords_X, vector<int> &rAllCoords_Y, int *pAnchors, array<vector<int>, 10> &rDistancesAnchor_Tag)
 	{
 		int counter = 0;
-		while(counter < x_es.size())
+		while (counter < rDistancesAnchor_Tag.size())
 		{
-			cout << "X: " << x_es[counter] << ", Y: " << y_es[counter] << endl;
+			int anchor_X = *pAnchors++;
+			int anchor_Y = *pAnchors++;
+			if (anchor_X >= 0 && anchor_Y >= 0)
+			{
+				for(int i = 0; i < rAllCoords_X.size(); i++)
+				{
+					rDistancesAnchor_Tag[counter].push_back(lround(sqrt(pow(anchor_X - rAllCoords_X[i], 2) + pow(anchor_Y - rAllCoords_Y[i], 2))));
+					/*
+					prints distances from tag to each anchor, delete forr final compilation
+					*/
+					cout << "Distance of : " << counter << " is: " << rDistancesAnchor_Tag[counter][i] << endl;
+				}
+			}
 			counter++;
 		}
 	}
