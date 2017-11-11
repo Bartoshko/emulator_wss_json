@@ -15,39 +15,41 @@ points.
 class Path
 {
 public:
-	Path(vector<int> &rCoordinatesX, vector<int> &rCoordinatesY, bool isClosed, bool isCurved, int &rAnchors)
+	Path(vector<int> &rCoordinatesX, vector<int> &rCoordinatesY, bool isClosed, bool isCurved)
 	{
 		checkPointCoordinatesX = rCoordinatesX;
 		checkPointCoordinatesY = rCoordinatesY;
 		isClosed = isClosed;
 		isCurved = isCurved;
-		pAnchors = &rAnchors;
 		closingPathSetter(isClosed, checkPointCoordinatesX, checkPointCoordinatesY);
 		calculatePath(isCurved, pathAllCoords_X, pathAllCoords_Y);
-		calculateDistancesForEachAnchor(pathAllCoords_X, pathAllCoords_Y, pAnchors, distancesAnchor_Tag);
 	}
-	array<int, 10> getConsecutiveDistance(void)
+	~Path(){}
+
+	array<int, 10> consecutiveDistanceOfTagToAnchors(array<array<int, 2>, 10> distancesTab)
 	{
-		if (consecutiveDistanceCounter < distancesAnchor_Tag[0].size())
-		{
-			for (int c = 0; c < distancesAnchor_Tag.size(); c++)
-			{
-				consecutiveDistanceTable[c] = distancesAnchor_Tag[c][consecutiveDistanceCounter];
-			}
-			consecutiveDistanceCounter++;
-			return consecutiveDistanceTable;
-		}
-		else
+		if(consecutiveDistanceCounter == pathAllCoords_X.size())
 		{
 			consecutiveDistanceCounter = 0;
 		}
+		for(int i = 0; i < 10; i++)
+		{
+			if(distancesTab[i][0] != -1 && distancesTab[i][1] != -1)
+			{
+				consecutiveDistanceTable[i] = lround(sqrt(pow(distancesTab[i][0] - pathAllCoords_X[consecutiveDistanceCounter], 2) + pow(distancesTab[i][1] - pathAllCoords_Y[consecutiveDistanceCounter], 2)));
+			}
+			else
+			{
+				consecutiveDistanceTable[i] = -1;
+			}
+		}
+		consecutiveDistanceCounter++;
+		return consecutiveDistanceTable;
 	}
 
 private:
 	int consecutiveDistanceCounter = 0;
-	int *pAnchors = 0;
 	vector<int> checkPointCoordinatesX, checkPointCoordinatesY, pathAllCoords_X, pathAllCoords_Y;
-	array<vector<int>, 10> distancesAnchor_Tag;
 	array<int, 10> consecutiveDistanceTable;
 	static bool isClosed, isCurved;
 
@@ -114,25 +116,4 @@ private:
 		}
 	}
 
-	void calculateDistancesForEachAnchor(vector<int> &rAllCoords_X, vector<int> &rAllCoords_Y, int *pAnchors, array<vector<int>, 10> &rDistancesAnchor_Tag)
-	{
-		int counter = 0;
-		while (counter < rDistancesAnchor_Tag.size())
-		{
-			int anchor_X = *pAnchors++;
-			int anchor_Y = *pAnchors++;
-			if (anchor_X >= 0 && anchor_Y >= 0)
-			{
-				for(int i = 0; i < rAllCoords_X.size(); i++)
-				{
-					rDistancesAnchor_Tag[counter].push_back(lround(sqrt(pow(anchor_X - rAllCoords_X[i], 2) + pow(anchor_Y - rAllCoords_Y[i], 2))));
-					/*
-					prints distances from tag to each anchor, delete forr final compilation
-					*/
-					cout << "Distance of : " << counter << " is: " << rDistancesAnchor_Tag[counter][i] << endl;
-				}
-			}
-			counter++;
-		}
-	}
 };

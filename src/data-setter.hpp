@@ -13,54 +13,78 @@ public:
 	{
 		jsonFilePath = pathToJson;
 		fstream fileRead(jsonFilePath);
-		fileRead >> jsonObj;
+		fileRead >> jsonPathObject;
 	}
+	~DataSetter(){};
 
 	int getCoordinatesSize()
 	{
-		return jsonObj["path"]["coordinates"].size();
+		return jsonPathObject["path"]["coordinates"].size();
 	}
 
 	int get_X_ConsecutiveCoordinate(int index)
 	{
-		return jsonObj["path"]["coordinates"][index]["x"];
+		return jsonPathObject["path"]["coordinates"][index]["x"];
 	}
 
 	int get_Y_ConsecutiveCoordinate(int index)
 	{
-		return jsonObj["path"]["coordinates"][index]["y"];
+		return jsonPathObject["path"]["coordinates"][index]["y"];
 	}
 
 	int getTagId()
 	{
-		return jsonObj["tag_short_id"];
+		return jsonPathObject["tag_short_id"];
 	}
 
 	int getMovingSpeed()
 	{
-		return jsonObj["path"]["parameters"]["speed"];
+		return jsonPathObject["path"]["parameters"]["speed"];
 	}
 
 	int getLossValue()
 	{
-		return jsonObj["path"]["parameters"]["loss"];
+		return jsonPathObject["path"]["parameters"]["loss"];
 	}
 
 	bool getPathIsCurved()
 	{
-		return jsonObj["path"]["parameters"]["curved"];
+		return jsonPathObject["path"]["parameters"]["curved"];
 	}
 
 	bool getPathIsClosed()
 	{
-		return jsonObj["path"]["parameters"]["closed"];
+		return jsonPathObject["path"]["parameters"]["closed"];
 	}
 
 
 private:
-	json jsonObj;
+	json jsonPathObject;
 	string jsonFilePath;
 	int coordinatesSize;
 	int numberOf_X_coordinates = 0;
 	int numberOf_Y_coordinates = 0;
+};
+
+class Package
+{
+	public:
+		Package(array<int , 10> anchorsShortIds, int TagShortId, array<int, 10> distances){
+			jsonPackageObject["info"] = {};
+			jsonPackageObject["measures"] = {};
+			for(int index = 0; index < distances.size(); index++)
+			{
+				if(distances[index] != -1)
+				{
+					jsonPackageObject["measures"].push_back({{"id_0", anchorsShortIds[index]}, {"id_1", TagShortId}, {"distance", distances[index]}});
+				}
+			}
+		}
+		~Package(){};
+		string stringifyJsonPackageObject(void)
+		{
+			return jsonPackageObject.dump();
+		}
+	private:
+		json jsonPackageObject;
 };
