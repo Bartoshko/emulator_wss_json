@@ -42,9 +42,7 @@ using namespace std;
 	than it needs to allocate {-1, -1} for each not existing anchor.
 	*/
 int anchorsInitialization[10][2] =  {{10, 20}, {100, 200}, {-1, -1}, {-1, -1}, {-1, -1}, {-1, -1}, {-1, -1}, {-1, -1}, {-1, -1}, {-1, -1}};
-/*
-below allocated values should stay as they are after websocket implementation
-*/
+
 array<array<int, 2>, 10> anchors;
 vector<int> passingPointsX, passingPointsY;
 int counter = 0;
@@ -66,25 +64,21 @@ int main()
 
 	DataSetter setter(pathToJsonFile);
 
-	for(int index = 0; index < setter.getCoordinatesSize(); index++)
+	for(int index = 0; index < setter.GetCoordinatesSize(); index++)
 	{
-		passingPointsX.push_back(setter.get_X_ConsecutiveCoordinate(index));
-		passingPointsY.push_back(setter.get_Y_ConsecutiveCoordinate(index));
+		passingPointsX.push_back(setter.Get_X_ConsecutiveCoordinate(index));
+		passingPointsY.push_back(setter.Get_Y_ConsecutiveCoordinate(index));
 	}
 
-	Path path(passingPointsX, passingPointsY, setter.getPathIsClosed(), setter.getPathIsCurved());
+	Path path(passingPointsX, passingPointsY, setter.GetPathIsClosed(), setter.GetPathIsCurved());
 
 	for(int a = 0; a < 100000; a++)
 	{
 		sleep(1);
 		cout << "Package number: "<< a << endl;
-		distances = path.consecutiveDistanceOfTagToAnchors(anchors);
-		// for(int consecAnchor = 0; consecAnchor < distances.size(); consecAnchor++)
-		// {
-		// 	cout << "Distance from anchor " << consecAnchor << " is: " << distances[consecAnchor] << endl;
-		// }
+		distances = path.ConsecutiveDistanceOfTagToAnchors(anchors);
 		Package package({10099, 10199, 10299, 10399, 10499, 10599, 10699, 10799, 10899, 10999}, 99, distances);
-		cout << package.stringifyJsonPackageObject() << endl;
+		cout << package.StringifyJsonPackageObject() << endl;
 	}
 
 
