@@ -6,7 +6,7 @@
 using json = nlohmann::json;
 using namespace std;
 
-/* CLASS DATASETTER */
+/* class DataSetter */
 /* ======================================================= */
 
 class DataSetter
@@ -22,6 +22,7 @@ public:
 	int GetLossValue(void);
 	bool GetPathIsCurved(void);
 	bool GetPathIsClosed(void);
+	void CheckJsonCompatibility(bool &compatibility);
 
 private:
 	json jsonPathObject;
@@ -38,6 +39,22 @@ DataSetter::DataSetter(string pathToJson)
 	fileRead >> jsonPathObject;
 }
 DataSetter::~DataSetter(){}
+
+void DataSetter::CheckJsonCompatibility(bool &compatibility)
+{
+	compatibility = false;
+	if(jsonPathObject.size() > 0 &&
+		jsonPathObject["path"].size() > 0 &&
+		jsonPathObject["path"]["parameters"].size() > 0 &&
+		jsonPathObject["path"]["parameters"]["closed"].size() > 0 &&
+		jsonPathObject["path"]["parameters"]["curved"].size() > 0 &&
+		jsonPathObject["path"]["parameters"]["loss"].size() > 0 &&
+		jsonPathObject["path"]["parameters"]["speed"].size() > 0 &&
+		jsonPathObject["path"]["coordinates"].size() > 0)
+	{
+		compatibility = true;
+	}
+}
 
 bool DataSetter::GetPathIsClosed()
 {
@@ -71,28 +88,39 @@ int DataSetter::GetCoordinatesSize()
 {
 	return jsonPathObject["path"]["coordinates"].size();
 }
+
 /* ======================================================= */
 
-/* CLASS PACKAGE */
+/* class package */
 /* ======================================================= */
+
+typedef array<int, 10> distancesOfEachAnchor;
 
 class Package
 {
 	public:
-		Package(array<int , 10> anchorsShortIds, int TagShortId, array<int, 10> distances);
+		Package(array<unsigned , 10> anchorsShortIds, unsigned TagShortId, array<distancesOfEachAnchor, 10> distances);
 		~Package();
 		string StringifyJsonPackageObject(void);
 	private:
 		json jsonPackageObject;
 };
-Package::Package(array<int , 10> anchorsShortIds, int TagShortId, array<int, 10> distances){
-	jsonPackageObject["info"] ={0};
+Package::Package(array<unsigned , 10> anchorsShortIds, unsigned TagShortId, array<distancesOfEachAnchor, 10> distances)
+{
+	jsonPackageObject["info"] = {0};
 	jsonPackageObject["measures"] = {};
-	for(int index = 0; index < distances.size(); index++)
+
+	unsigned n;
+	unsigned o;
+
+	for(n = 0; n < distances.size(); n++)
 	{
-		if(distances[index] != -1)
+		for(o = 0; o < distances[n].size(); o++)
 		{
-			jsonPackageObject["measures"].push_back({{"id_0", anchorsShortIds[index]}, {"id_1", TagShortId}, {"distance", distances[index]}});
+			if(distances[n][o] != -1)
+			{
+				jsonPackageObject["measures"].push_back({{"id_0", anchorsShortIds[o]}, {"id_1", TagShortId}, {"distance", distances[n][o]}});
+			}
 		}
 	}
 }

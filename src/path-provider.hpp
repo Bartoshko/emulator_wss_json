@@ -3,30 +3,23 @@
 #include <cmath>
 #include <array>
 
-/*
-Path class constructs two arrays: pathAllCoords_X and pathAllCoords_Y
-that are representing path that is taken by interpolating lines if path is not curved,
-or are calculated from calculating polinomial interpolation for smallest logical vector step
-between given crossing points in checkPointCoordinatesX and checkPointCoordinatesY.
-This path calculates crossing points from velocity of traveling tag between given crossing
-points.
-*/
+typedef array<int, 2> coordinates;
+typedef array<int, 10> distancesOfEachAnchor;
 
-/* CLASS PATH */
+/* class Path */
 /* ======================================================= */
-
 
 class Path
 {
 
 public:
-	array<int, 10> ConsecutiveDistanceOfTagToAnchors(array<array<int, 2>, 10> distancesTab);
+	array<distancesOfEachAnchor, 10> ConsecutiveDistanceOfTagToAnchors(array<coordinates, 10> distancesTab);
 	Path(vector<int> &rCoordinatesX, vector<int> &rCoordinatesY, bool isClosed, bool isCurved);
 	~Path();
 private:
-	int consecutiveDistanceCounter = 0;
+	unsigned consecutiveDistanceCounter = 0;
 	vector<int> checkPointCoordinatesX, checkPointCoordinatesY, pathAllCoords_X, pathAllCoords_Y;
-	array<int, 10> consecutiveDistanceTable;
+	array<distancesOfEachAnchor, 10> consecutiveDistanceTable;
 	static bool isClosed, isCurved;
 	void ClosingPathSetter(bool closed, vector<int> &checkPointsX, vector<int> &checkPointsY);
 	void CalculatePath(bool curved, vector<int> &allCoords_X, vector<int> &allCoords_Y);
@@ -43,24 +36,30 @@ Path::Path(vector<int> &rCoordinatesX, vector<int> &rCoordinatesY, bool isClosed
 }
 Path::~Path()
 {}
-array<int, 10> Path::ConsecutiveDistanceOfTagToAnchors(array<array<int, 2>, 10> distancesTab)
+array<distancesOfEachAnchor, 10> Path::ConsecutiveDistanceOfTagToAnchors(array<coordinates, 10> distancesTab)
 {
-	if(consecutiveDistanceCounter == pathAllCoords_X.size())
+	for(unsigned c = 0; c < 10; c++)
 	{
-		consecutiveDistanceCounter = 0;
-	}
-	for(int i = 0; i < 10; i++)
-	{
-		if(distancesTab[i][0] != -1 && distancesTab[i][1] != -1)
+		for(unsigned i = 0; i < 10; i++)
 		{
-			consecutiveDistanceTable[i] = lround(sqrt(pow(distancesTab[i][0] - pathAllCoords_X[consecutiveDistanceCounter], 2) + pow(distancesTab[i][1] - pathAllCoords_Y[consecutiveDistanceCounter], 2)));
+			if(distancesTab[i][0] != -1 && distancesTab[i][1] != -1)
+			{
+				consecutiveDistanceTable[c][i] = lround(sqrt(pow(distancesTab[i][0] - pathAllCoords_X[consecutiveDistanceCounter], 2) + pow(distancesTab[i][1] - pathAllCoords_Y[consecutiveDistanceCounter], 2)));
+			}
+			else
+			{
+				consecutiveDistanceTable[c][i] = -1;
+			}
+		}
+		if(consecutiveDistanceCounter == pathAllCoords_X.size())
+		{
+			consecutiveDistanceCounter = 0;
 		}
 		else
 		{
-			consecutiveDistanceTable[i] = -1;
+			consecutiveDistanceCounter++;
 		}
 	}
-	consecutiveDistanceCounter++;
 	return consecutiveDistanceTable;
 }
 
@@ -84,26 +83,48 @@ void Path::ClosingPathSetter(bool closed, vector<int> &checkPointsX, vector<int>
 }
 void Path::CalculatePath(bool curved, vector<int> &allCoords_X, vector<int> &allCoords_Y)
 {
-	int vector_X, vector_Y, step;
-	double sectorVector, stepVector_X, stepVector_Y, increment_X, increment_Y;
+	int vector_X, vector_Y, inertia_X, inertia_Y, step;
+	unsigned i;
+	double sectorVector, stepVector_X, stepVector_Y, increment_X, increment_Y, inertiaStep_X, inertiaStep_Y, inertiaChange_X, inertiaChange_Y;
 
-	if(curved)
+	if(curved) // TODO: analize with valgrind for memory leaks, implement should be chcked and for curved paths
 	{
-		for(int i = 0; i < checkPointCoordinatesX.size() -1; i++)
+		for(i = 0; i < checkPointCoordinatesX.size() -1; i++)
 		{
-			/*
-			polinomial interpolation method will not work when applied straight away,
-			becouse curvature is rarely symetric according to X or Y axis
-			and coordinates system needs to be rotated, so better approuch is to
-			use quantified vector method, what will be coded soon...
-			*/
-			cout << "Check point curved X: " << checkPointCoordinatesX[i] << endl;
-			cout << "Check point curved Y: " << checkPointCoordinatesY[i] << endl;
+			vector_X = checkPointCoordinatesX[i+1] - checkPointCoordinatesX[i];
+			vector_Y = checkPointCoordinatesY[i+1] - checkPointCoordinatesY[i];
+			if(i == 0){
+				inertia_X = 0;
+				inertia_Y = 0;
+			}
+			else
+			{
+				inertia_X = checkPointCoordinatesX[i] - checkPointCoordinatesX[i-1];
+				inertia_Y = checkPointCoordinatesY[i] - checkPointCoordinatesY[i-1];
+			}
+			sectorVector = sqrt(pow((vector_X + inertia_X), 2) + pow((vector_Y + inertia_Y), 2));
+			stepVector_X = vector_X / sectorVector;
+			stepVector_Y = vector_Y / sectorVector;
+			inertiaStep_X = inertia_X / sectorVector;
+			inertiaStep_Y = inertia_Y / sectorVector;
+			inertiaChange_X = inertiaStep_X;
+			inertiaChange_Y = inertiaStep_Y;
+			step = 0;
+			while(step < sectorVector - 1)
+				{
+					increment_X += (stepVector_X + inertiaStep_X);
+					increment_Y += (stepVector_Y + inertiaStep_Y);
+					inertiaChange_X -= inertiaStep_X / (sectorVector * 2);
+					inertiaChange_Y -= inertiaStep_Y / (sectorVector * 2);
+					allCoords_X.push_back(lround(checkPointCoordinatesX[i] + increment_X));
+					allCoords_Y.push_back(lround(checkPointCoordinatesY[i] + increment_Y));
+					step++;
+				}
 		}
 	}
 	else
 	{
-		for(int i = 0; i < checkPointCoordinatesX.size() - 1; i++)
+		for(i = 0; i < checkPointCoordinatesX.size() - 1; i++)
 		{
 			vector_X = checkPointCoordinatesX[i+1] - checkPointCoordinatesX[i];
 			vector_Y = checkPointCoordinatesY[i+1] - checkPointCoordinatesY[i];
@@ -122,8 +143,8 @@ void Path::CalculatePath(bool curved, vector<int> &allCoords_X, vector<int> &all
 				step++;
 			}
 		}
-		cout << "Path has " << pathAllCoords_Y.size() << " points." << endl;
 	}
+	cout << "Path has " << pathAllCoords_Y.size() << " points." << endl;
 }
 
 /* ======================================================= */
