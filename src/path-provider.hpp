@@ -113,15 +113,19 @@ void Path::CalculatePath(bool curved, vector<int> &allCoords_X, vector<int> &all
 	{
 		/*
 		* This implementation was taken as a challange and is not working properly
-		* for the moment, path coords are properly interpolated, based on simpliication,
-		* that path is interpolated from 3 points only, i - 1, i, and i + 1, where
-		* i coords are beginning of the section that is calculated and end of section calculated * before,  i - 1 is beginning of section before and i + 1 is an end of section that is
-		* calculeted in given iteration i.
-		* Distances betweeen points are nort equal, for each path section it's path length should
+		* at the moment. Path coords are properly interpolated, based on simplification:
+		* 1. path is interpolated from 3 points only, i - 1, i, and i + 1.
+		* 2. i coords are beginning of the section that is calculated.
+		* 3. i is as well end of section befor section that is calculated in given iteration
+		* 4. i - 1 is beginning of section before.
+		* 5. i + 1 is an end of section that is calculeted in given iteration i.
+		* Distances betweeen points are not equal, for each path section it's path length should
 		* be calculated and than sectorVector for x and y should be calculated for each sector.
-		* In simplified approuch of 3 points calculation path length may take very big values,
-		* probobly even with more crossing points taken to account this will be hard to calculate
-		* from lagrange polynomial interpolation, so use curved path setter with care.
+		* In simplified approuch for 3 pointsthat are taken to calculate interpolation
+		* path length maybe very big value,
+		* probobly even with more crossing points taken to account this will be hard to calculate,
+		* so use curved path setter with care.
+		* I am using lagrange polynomial interpolation.
 		* I will rethink this implementation in the future.
 		*/
 		for(i = 0; i < checkPointCoordinatesX.size() - 1; i++)
@@ -134,9 +138,7 @@ void Path::CalculatePath(bool curved, vector<int> &allCoords_X, vector<int> &all
 			increment_X = 0;
 			increment_Y = 0;
 			/*
-			* It is assumed that path between first two points will be always a line
-			* It anotherr simplification that will mess up path correctness,
-			* and willbe taken under rearangement infuture implementation
+			* It is assumed that path between first two points will be a line
 			*/
 			if(i < 1)
 			{
