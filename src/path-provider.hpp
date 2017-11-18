@@ -92,7 +92,7 @@ double Path::Interpolate(Coords sectionPoints[3], int xi, int n)
 
     for (unsigned i_n = 0; i_n < n; i_n++)
     {
-        double term = section[i_n].y;
+        double term = sectionPoints[i_n].y;
 
         for (unsigned j_n = 0 ; j_n < n; j_n++)
         {
@@ -111,6 +111,19 @@ void Path::CalculatePath(bool curved, vector<int> &allCoords_X, vector<int> &all
 
 	if(curved)
 	{
+		/*
+		* This implementation was taken as a challange and is not working properly
+		* for the moment, path coords are properly interpolated, based on simpliication,
+		* that path is interpolated from 3 points only, i - 1, i, and i + 1, where
+		* i coords are beginning of the section that is calculated and end of section calculated * before,  i - 1 is beginning of section before and i + 1 is an end of section that is
+		* calculeted in given iteration i.
+		* Distances betweeen points are nort equal, for each path section it's path length should
+		* be calculated and than sectorVector for x and y should be calculated for each sector.
+		* In simplified approuch of 3 points calculation path length may take very big values,
+		* probobly even with more crossing points taken to account this will be hard to calculate
+		* from lagrange polynomial interpolation, so use curved path setter with care.
+		* I will rethink this implementation in the future.
+		*/
 		for(i = 0; i < checkPointCoordinatesX.size() - 1; i++)
 		{
 			vector_X = checkPointCoordinatesX[i+1] - checkPointCoordinatesX[i];
@@ -118,12 +131,16 @@ void Path::CalculatePath(bool curved, vector<int> &allCoords_X, vector<int> &all
 			sectorVector = sqrt(pow(vector_X, 2) + pow(vector_Y, 2));
 			stepVector_X = vector_X / sectorVector;
 			stepVector_Y = vector_Y / sectorVector;
+			increment_X = 0;
+			increment_Y = 0;
 			/*
-			It is assumed that path between first two points will be always a line
+			* It is assumed that path between first two points will be always a line
+			* It anotherr simplification that will mess up path correctness,
+			* and willbe taken under rearangement infuture implementation
 			*/
 			if(i < 1)
 			{
-			step = 0;
+				step = 0;
 				while(step < sectorVector - 1)
 				{
 					increment_X += stepVector_X;
@@ -135,36 +152,20 @@ void Path::CalculatePath(bool curved, vector<int> &allCoords_X, vector<int> &all
 			}
 			else
 			{
-				/*
-				First it is needed to have calculated path length,
-				Interpolate function will calculate y point for given x point
-				based on given aPoint array that contains crossing points coordinates.
-				Then algorithm calculates quantified length of interpolated path
-				between i-th coords and i-th + 1 coords.
-				When length of the function calculated from lagrange polynomial is known,
-				then it is possible finally to calculate how many steps it needs
-				to keep the same length of step vector through the whole interpolated path.
-				Path length is calculated from the sum of stepVector_X being projected on stepVector_Y.
-				Path will be then recalculated again for proper path length.
-				*/
 				Coords aPoints[3] = {{x: checkPointCoordinatesX[i - 1], y: checkPointCoordinatesY[i - 1]}, {x: checkPointCoordinatesX[i], y: checkPointCoordinatesY[i]}, {x: checkPointCoordinatesX[i + 1], y: checkPointCoordinatesY[i + 1]}};
 
-				double pathLength = 0;
+				double appendable_X, appendable_Y;
 
 				stepVector_X = vector_X / sectorVector;
-				stepVector_Y = 0;
+				appendable_X = checkPointCoordinatesX[i];
 				step = 0;
-				while(increment_X < sectorVector - 1)
+				while(step < sectorVector - 1)
 				{
-					increment_X += stepVector_X;
-					stepVector_Y = Interpolate(aPoints, increment_X, 3) - stepVector_Y;
-					pathLength += sqrt(pow(stepVector_X, 2) + pow(stepVector_Y , 2));
-				}
-
-				double increment = 0;
-				while(increment < pathLength)
-				{
-					// MAGIC WILL HAPPEND HERE
+					appendable_Y = Interpolate(aPoints, appendable_X, 3);
+					allCoords_X.push_back(lround(appendable_X));
+					allCoords_Y.push_back(lround(appendable_Y));
+					appendable_X += stepVector_X;
+					step++;
 				}
 			}
 		}
