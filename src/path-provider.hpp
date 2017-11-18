@@ -2,9 +2,14 @@
 #include <vector>
 #include <cmath>
 #include <array>
+#include <bits/stdc++.h>
 
 typedef array<int, 2> coordinates;
 typedef array<int, 10> distancesOfEachAnchor;
+struct Coords
+{
+    int x, y;
+};
 
 /* class Path */
 /* ======================================================= */
@@ -23,7 +28,7 @@ private:
 	static bool isClosed, isCurved;
 	void ClosingPathSetter(bool closed, vector<int> &checkPointsX, vector<int> &checkPointsY);
 	void CalculatePath(bool curved, vector<int> &allCoords_X, vector<int> &allCoords_Y);
-
+	double Interpolate(Coords sectionPoints[3], int xi, int n);
 };
 Path::Path(vector<int> &rCoordinatesX, vector<int> &rCoordinatesY, bool isClosed, bool isCurved)
 {
@@ -81,45 +86,87 @@ void Path::ClosingPathSetter(bool closed, vector<int> &checkPointsX, vector<int>
 		}
 	}
 }
+double Path::Interpolate(Coords sectionPoints[3], int xi, int n)
+{
+    double result = 0;
+
+    for (unsigned i_n = 0; i_n < n; i_n++)
+    {
+        double term = section[i_n].y;
+
+        for (unsigned j_n = 0 ; j_n < n; j_n++)
+        {
+            if (j_n != i_n)
+                term = term*(xi - sectionPoints[j_n].x) / double(sectionPoints[i_n].x - sectionPoints[j_n].x);
+        }
+        result += term;
+    }
+    return result;
+}
 void Path::CalculatePath(bool curved, vector<int> &allCoords_X, vector<int> &allCoords_Y)
 {
-	int vector_X, vector_Y, inertia_X, inertia_Y, step;
-	unsigned i;
-	double sectorVector, stepVector_X, stepVector_Y, increment_X, increment_Y, inertiaStep_X, inertiaStep_Y, inertiaChange_X, inertiaChange_Y;
+	double sectorVector, stepVector_X, stepVector_Y, increment_X, increment_Y;
+	int vector_X, vector_Y;
+	unsigned i, step;
 
-	if(curved) // TODO: analize with valgrind for memory leaks, implement should be chcked and for curved paths
+	if(curved)
 	{
-		for(i = 0; i < checkPointCoordinatesX.size() -1; i++)
+		for(i = 0; i < checkPointCoordinatesX.size() - 1; i++)
 		{
 			vector_X = checkPointCoordinatesX[i+1] - checkPointCoordinatesX[i];
 			vector_Y = checkPointCoordinatesY[i+1] - checkPointCoordinatesY[i];
-			if(i == 0){
-				inertia_X = 0;
-				inertia_Y = 0;
-			}
-			else
-			{
-				inertia_X = checkPointCoordinatesX[i] - checkPointCoordinatesX[i-1];
-				inertia_Y = checkPointCoordinatesY[i] - checkPointCoordinatesY[i-1];
-			}
-			sectorVector = sqrt(pow((vector_X + inertia_X), 2) + pow((vector_Y + inertia_Y), 2));
+			sectorVector = sqrt(pow(vector_X, 2) + pow(vector_Y, 2));
 			stepVector_X = vector_X / sectorVector;
 			stepVector_Y = vector_Y / sectorVector;
-			inertiaStep_X = inertia_X / sectorVector;
-			inertiaStep_Y = inertia_Y / sectorVector;
-			inertiaChange_X = inertiaStep_X;
-			inertiaChange_Y = inertiaStep_Y;
+			/*
+			It is assumed that path between first two points will be always a line
+			*/
+			if(i < 1)
+			{
 			step = 0;
-			while(step < sectorVector - 1)
+				while(step < sectorVector - 1)
 				{
-					increment_X += (stepVector_X + inertiaStep_X);
-					increment_Y += (stepVector_Y + inertiaStep_Y);
-					inertiaChange_X -= inertiaStep_X / (sectorVector * 2);
-					inertiaChange_Y -= inertiaStep_Y / (sectorVector * 2);
+					increment_X += stepVector_X;
+					increment_Y += stepVector_Y;
 					allCoords_X.push_back(lround(checkPointCoordinatesX[i] + increment_X));
 					allCoords_Y.push_back(lround(checkPointCoordinatesY[i] + increment_Y));
 					step++;
 				}
+			}
+			else
+			{
+				/*
+				First it is needed to have calculated path length,
+				Interpolate function will calculate y point for given x point
+				based on given aPoint array that contains crossing points coordinates.
+				Then algorithm calculates quantified length of interpolated path
+				between i-th coords and i-th + 1 coords.
+				When length of the function calculated from lagrange polynomial is known,
+				then it is possible finally to calculate how many steps it needs
+				to keep the same length of step vector through the whole interpolated path.
+				Path length is calculated from the sum of stepVector_X being projected on stepVector_Y.
+				Path will be then recalculated again for proper path length.
+				*/
+				Coords aPoints[3] = {{x: checkPointCoordinatesX[i - 1], y: checkPointCoordinatesY[i - 1]}, {x: checkPointCoordinatesX[i], y: checkPointCoordinatesY[i]}, {x: checkPointCoordinatesX[i + 1], y: checkPointCoordinatesY[i + 1]}};
+
+				double pathLength = 0;
+
+				stepVector_X = vector_X / sectorVector;
+				stepVector_Y = 0;
+				step = 0;
+				while(increment_X < sectorVector - 1)
+				{
+					increment_X += stepVector_X;
+					stepVector_Y = Interpolate(aPoints, increment_X, 3) - stepVector_Y;
+					pathLength += sqrt(pow(stepVector_X, 2) + pow(stepVector_Y , 2));
+				}
+
+				double increment = 0;
+				while(increment < pathLength)
+				{
+					// MAGIC WILL HAPPEND HERE
+				}
+			}
 		}
 	}
 	else

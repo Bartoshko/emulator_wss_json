@@ -5,7 +5,7 @@
       "loss": 5,
       "closed": true,
       "speed": 100,
-      "curved": false
+      "curved": true
     },
     "coordinates": [
       {
